@@ -27,21 +27,38 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install Common Dependencies
+      - name: Install Dependencies (Ubuntu 24.04)
+        if: matrix.os == 'ubuntu-24.04'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y             build-essential cmake cmake-qt-gui git dpkg-dev debhelper libtool checkinstall swig             python3-dev python3-pip python3-setuptools python3-yaml python3-matplotlib             libocct-modeling-algorithms-dev libocct-visualization-dev libocct-data-exchange-dev             libocct-foundation-dev libocct-modeling-data-dev libocct-ocaf-dev             libvtk9-dev libvtk9-qt-dev libmedc-dev             libboost-all-dev libxerces-c-dev libfmt-dev libeigen3-dev libcoin-dev libyaml-cpp-dev             libzipios++-dev libjsoncpp-dev nlohmann-json3-dev libsqlite3-dev libssl-dev
+          sudo apt-get update && sudo apt-get install -y \
+            build-essential cmake cmake-qt-gui git dpkg-dev debhelper libtool checkinstall swig \
+            python3-dev python3-pip python3-setuptools python3-yaml python3-matplotlib python3-pivy \
+            qtbase5-dev qttools5-dev qttools5-dev-tools qtxmlpatterns5-dev-tools libqt5svg5-dev libqt5webkit5-dev \
+            python3-pyside2.qtcore python3-pyside2.qtwidgets python3-pyside2.qtgui python3-pyside2.qtxml \
+            libocct-modeling-algorithms-dev libocct-visualization-dev libocct-data-exchange-dev \
+            libocct-foundation-dev libocct-modeling-data-dev libocct-ocaf-dev \
+            libvtk9-dev libvtk9-qt-dev libmedc-dev pybind11-dev \
+            libboost-all-dev libxerces-c-dev libfmt-dev libeigen3-dev libcoin-dev libyaml-cpp-dev \
+            libzipios++-dev libjsoncpp-dev nlohmann-json3-dev libsqlite3-dev libssl-dev
 
-      - name: Install OS Specific Dependencies
+      - name: Install Dependencies (Ubuntu 26.04)
+        if: matrix.os == 'ubuntu-latest' # Předpokládá ubuntu-26.04 nebo latest podle vaší matice
         run: |
-          sudo apt-get install -y ${{ matrix.extra_pkgs }}
-
-      - name: Configure CMake
-        run: |
-          mkdir build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release                 -DFREECAD_USE_QT6=${{ matrix.qt_version }}                 -DENABLE_DEVELOPER_TESTS=OFF                 -DBUILD_TESTING=OFF                 -DFREECAD_BUILD_TESTS=OFF ..
-
+          sudo apt-get update && sudo apt-get install -y \
+            build-essential cmake cmake-qt-gui git dpkg-dev debhelper libtool checkinstall swig \
+            python3-dev python3-pip python3-setuptools python3-yaml python3-matplotlib pybind11-dev \
+            qt6-base-dev qt6-base-private-dev qt6-tools-dev qt6-tools-dev-tools \
+            libqt6svg6-dev qt6-l10n-tools qt6-shadertools-dev \
+            libocct-modeling-algorithms-dev libocct-visualization-dev libocct-data-exchange-dev \
+            libocct-foundation-dev libocct-modeling-data-dev libocct-ocaf-dev \
+            libvtk9-dev libvtk9-qt-dev libmedc-dev \
+            libboost-all-dev libxerces-c-dev libfmt-dev libeigen3-dev libcoin-dev libyaml-cpp-dev \
+            libzipios++-dev libjsoncpp-dev nlohmann-json3-dev libsqlite3-dev libssl-dev
+          
+          # Pro Ubuntu 26.04 raději nainstalujeme PySide6, Shiboken a Pivy přes PIP, čímž eliminujeme chybějící balíčky v apt repozitáři
+          pip3 install --break-system-packages PySide6 shiboken6 pivy
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
       - name: Compile FreeCAD
         run: |
           cd build
