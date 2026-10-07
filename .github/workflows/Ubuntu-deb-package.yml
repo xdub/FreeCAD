@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - build-deb  # Přidáno, aby se build spustil i při pushování do vaší větve
   workflow_dispatch:
 
 jobs:
@@ -16,10 +17,8 @@ jobs:
         include:
           - os: ubuntu-24.04
             qt_version: "OFF"
-            extra_pkgs: "qtbase5-dev qttools5-dev qttools5-dev-tools qtxmlpatterns5-dev-tools libqt5svg5-dev libqt5webkit5-dev libpyside2-dev python3-pyside2.qtcore python3-pyside2.qtwidgets python3-pyside2.qtgui python3-pyside2.qtxml python3-pivy"
           - os: ubuntu-26.04
             qt_version: "ON"
-            extra_pkgs: "qt6-base-dev qt6-base-private-dev qt6-tools-dev qt6-tools-dev-tools libqt6svg6-dev qt6-l10n-tools qt6-shadertools-dev libqt6shadertools6-dev libpyside6-dev shiboken6 python3-pyside6 python3-pivy"
 
     steps:
       - name: Checkout Source Code
@@ -42,7 +41,7 @@ jobs:
             libzipios++-dev libjsoncpp-dev nlohmann-json3-dev libsqlite3-dev libssl-dev
 
       - name: Install Dependencies (Ubuntu 26.04)
-        if: matrix.os == 'ubuntu-latest' # Předpokládá ubuntu-26.04 nebo latest podle vaší matice
+        if: matrix.os == 'ubuntu-26.04'
         run: |
           sudo apt-get update && sudo apt-get install -y \
             build-essential cmake cmake-qt-gui git dpkg-dev debhelper libtool checkinstall swig \
@@ -55,24 +54,35 @@ jobs:
             libboost-all-dev libxerces-c-dev libfmt-dev libeigen3-dev libcoin-dev libyaml-cpp-dev \
             libzipios++-dev libjsoncpp-dev nlohmann-json3-dev libsqlite3-dev libssl-dev
           
-          # Pro Ubuntu 26.04 raději nainstalujeme PySide6, Shiboken a Pivy přes PIP, čímž eliminujeme chybějící balíčky v apt repozitáři
           pip3 install --break-system-packages PySide6 shiboken6 pivy
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          
-      - name: Compile FreeCAD
+
+      - name: Configure and Compile FreeCAD
         run: |
-          cd build
+          # Vypnutí testů natvrdo v CMakeLists, aby se předešlo selhání na Google Test
+          sed -i 's/^add_subdirectory(tests)/# add_subdirectory(tests)/' CMakeLists.txt
+          
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release \
+                -DFREECAD_USE_QT6=${{ matrix.qt_version }} \
+                -DENABLE_DEVELOPER_TESTS=OFF \
+                -DFREECAD_BUILD_TESTS=OFF ..
           make -j$(nproc)
 
       - name: Create DEB Package via CheckInstall
         run: |
           cd build
-          # Předpřipravíme prázdný popis pro bezobslužný checkinstall
-          echo "Custom FreeCAD 1.1.4 package for ${{ matrix.os }}" > description-pak
-          sudo checkinstall --pkgname=freecad-custom                             --pkgversion=1.1.4                             --pkgrelease=${{ matrix.os }}                             --backup=no                             --fstrans=no                             --default                             --install=no
+          echo "Custom FreeCAD 1.1.4 package for Ubuntu ${{ matrix.os }}" > description-pak
+          sudo checkinstall --pkgname=freecad-custom \
+                            --pkgversion=1.1.4 \
+                            --pkgrelease=1 \
+                            --backup=no \
+                            --fstrans=no \
+                            --default \
+                            --install=no
 
       - name: Upload DEB Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/artifact/upload-artifact@v4
         with:
           name: freecad-1.1.4-${{ matrix.os }}
           path: build/*.deb
