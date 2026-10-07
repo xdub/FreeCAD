@@ -82,7 +82,7 @@ jobs:
                             --install=no
 
       - name: Upload DEB Artifact
-        uses: actions/artifact/upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: freecad-1.1.4-${{ matrix.os }}
           path: build/*.deb
