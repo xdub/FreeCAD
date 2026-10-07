@@ -38,8 +38,8 @@ jobs:
             libboost-all-dev libxerces-c-dev libfmt-dev libeigen3-dev libcoin-dev libyaml-cpp-dev \
             libzipios++-dev libjsoncpp-dev nlohmann-json3-dev libsqlite3-dev libssl-dev
 
-          # Instalace PySide6 přes pip (na Pythonu 3.12 v Ubuntu 24.04 jsou balíčky plně dostupné)
-          pip3 install --break-system-packages PySide6 shiboken6
+          # Vynucení starší verze PySide6 kompatibilní se systémovým Qt v Ubuntu 24.04
+          pip3 install --break-system-packages "PySide6==6.4.3" "shiboken6==6.4.3"
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Install Dependencies (Ubuntu 26.04)
