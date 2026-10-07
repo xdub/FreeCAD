@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - build-deb  # Přidáno, aby se build spustil i při pushování do vaší větve
+      - build-deb
   workflow_dispatch:
 
 jobs:
@@ -16,9 +16,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-            qt_version: "OFF"
           - os: ubuntu-26.04
-            qt_version: "ON"
 
     steps:
       - name: Checkout Source Code
@@ -32,8 +30,9 @@ jobs:
           sudo apt-get update && sudo apt-get install -y \
             build-essential cmake cmake-qt-gui git dpkg-dev debhelper libtool checkinstall swig \
             python3-dev python3-pip python3-setuptools python3-yaml python3-matplotlib python3-pivy \
-            qtbase5-dev qttools5-dev qttools5-dev-tools qtxmlpatterns5-dev-tools libqt5svg5-dev libqt5webkit5-dev \
-            python3-pyside2.qtcore python3-pyside2.qtwidgets python3-pyside2.qtgui python3-pyside2.qtxml \
+            qt6-base-dev qt6-base-private-dev qt6-tools-dev qt6-tools-dev-tools \
+            libqt6svg6-dev qt6-l10n-tools qt6-shadertools-dev \
+            python3-pyside6 python3-shiboken6 \
             libocct-modeling-algorithms-dev libocct-visualization-dev libocct-data-exchange-dev \
             libocct-foundation-dev libocct-modeling-data-dev libocct-ocaf-dev \
             libvtk9-dev libvtk9-qt-dev libmedc-dev pybind11-dev \
@@ -46,6 +45,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y \
             build-essential cmake cmake-qt-gui git dpkg-dev debhelper libtool checkinstall swig \
             python3-dev python3-pip python3-setuptools python3-yaml python3-matplotlib pybind11-dev \
+            python3-pyside6 python3-shiboken6 python3-pivy \
             qt6-base-dev qt6-base-private-dev qt6-tools-dev qt6-tools-dev-tools \
             libqt6svg6-dev qt6-l10n-tools qt6-shadertools-dev \
             libocct-modeling-algorithms-dev libocct-visualization-dev libocct-data-exchange-dev \
@@ -53,9 +53,6 @@ jobs:
             libvtk9-dev libvtk9-qt-dev libmedc-dev \
             libboost-all-dev libxerces-c-dev libfmt-dev libeigen3-dev libcoin-dev libyaml-cpp-dev \
             libzipios++-dev libjsoncpp-dev nlohmann-json3-dev libsqlite3-dev libssl-dev
-          
-          pip3 install --break-system-packages PySide6 shiboken6 pivy
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Configure and Compile FreeCAD
         run: |
@@ -64,7 +61,7 @@ jobs:
           
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=Release \
-                -DFREECAD_USE_QT6=${{ matrix.qt_version }} \
+                -DFREECAD_USE_QT6=ON \
                 -DENABLE_DEVELOPER_TESTS=OFF \
                 -DFREECAD_BUILD_TESTS=OFF ..
           make -j$(nproc)
